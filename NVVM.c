@@ -82,10 +82,10 @@ void write_csv_field(FILE *fp, const char *s) {
 }
 
 void addContent(){
-    char date[16];
-    char title[64];
-    char id[128];
-    char amount_text[64];
+    char date[20];
+    char title[100];
+    char id[20];
+    char amount_text[50];
     double amount = -1.0;
 
     const char *filename = "budget.csv";
