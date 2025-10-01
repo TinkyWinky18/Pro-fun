@@ -7,11 +7,12 @@ FILE *help;
 const char *filename = "budget.csv";
 
 void menu();
-void addContent();
+void addContent();//บรรทัดที่(90-198)
 void write_csv_field(FILE *fp, const char *s);
-void searchContent();
-void deleteContent();
-void editContent();
+void searchContent();//บรรทัดที่(200-317)
+void deleteContent();//บรรทัดที่(319-508)
+void editContent();//บรรทัดที่(510-832)
+void displayAllContent();//บรรทัดที่(834-897)
 
 int main(){
     do {
@@ -24,8 +25,8 @@ int main(){
         switch (ch)
         {
             case 1:
-                printf("-แสดงข้อมูลรายการในอดีต-\n");
-                printf("(ยังไม่ได้ทำครับT-T)\n");
+                printf("-แสดงข้อมูลรายการทั้งหมด-\n");
+                displayAllContent();
                 break;
             case 2:
                 printf("-เพิ่มรายการ-\n");
@@ -830,3 +831,67 @@ void editContent(){
     getchar();
 }
 
+void displayAllContent(){
+    char line[500];
+    int count = 0;
+    
+    help = fopen(filename, "r");
+    if (help == NULL) {
+        printf("ไม่พบไฟล์ข้อมูล กรุณาเพิ่มรายการก่อน\n");
+        printf("\nกด Enter เพื่อดำเนินการต่อ...");
+        getchar();
+        return;
+    }
+    
+    if (fgets(line, sizeof(line), help) == NULL) {
+        printf("ไฟล์ว่างเปล่า\n");
+        fclose(help);
+        printf("\nกด Enter เพื่อดำเนินการต่อ...");
+        getchar();
+        return;
+    }
+    
+    printf("\n========== รายการทั้งหมด ==========\n\n");
+    
+    while (fgets(line, sizeof(line), help) != NULL) {
+        char temp_line[500];
+        strcpy(temp_line, line);
+        
+        char *id = strtok(temp_line, ",");
+        char *title = strtok(NULL, ",");
+        char *amount = strtok(NULL, ",");
+        char *date = strtok(NULL, ",\n");
+        
+        if (id == NULL || title == NULL || amount == NULL || date == NULL) {
+            continue;
+        }
+        
+        if (id[0] == '"') {
+            id++;
+            if (id[strlen(id)-1] == '"') id[strlen(id)-1] = '\0';
+        }
+        if (title[0] == '"') {
+            title++;
+            if (title[strlen(title)-1] == '"') title[strlen(title)-1] = '\0';
+        }
+        
+        count++;
+        printf("[%d]\n", count);
+        printf("รหัสรายการ: %s\n", id);
+        printf("ชื่อรายการ: %s\n", title);
+        printf("จำนวนเงิน: %s บาท\n", amount);
+        printf("วันที่: %s\n", date);
+        printf("-----------------------------------\n");
+    }
+    
+    fclose(help);
+    
+    if (count == 0) {
+        printf("ไม่มีรายการในระบบ\n");
+    } else {
+        printf("\nแสดงทั้งหมด %d รายการ\n", count);
+    }
+    
+    printf("\nกด Enter เพื่อดำเนินการต่อ...");
+    getchar();
+}
