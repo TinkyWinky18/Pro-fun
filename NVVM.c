@@ -4,10 +4,12 @@
 
 int ch; 
 FILE *help;
+const char *filename = "budget.csv";
 
 void menu();
 void addContent();
 void write_csv_field(FILE *fp, const char *s);
+void searchContent();
 
 int main(){
     do {
@@ -29,7 +31,7 @@ int main(){
                 break;
             case 3:
                 printf("-ค้นหารายการ-\n");
-                printf("(ยังไม่ได้ทำครับT-T)\n");
+                searchContent();
                 break;
             case 4:
                 printf("-แก้ไขรายการ-\n");
@@ -89,8 +91,6 @@ void addContent(){
     char amount_text[50];
     double amount = -1.0;
 
-    const char *filename = "budget.csv";
-
     help = fopen(filename, "r");
     if (help == NULL) {
         help = fopen(filename, "w");
@@ -110,7 +110,6 @@ void addContent(){
         if (fgets(id, sizeof(id), stdin) == NULL) return;
         id[strcspn(id, "\n")] = '\0';
         
-        // ตรวจสอบว่ามีข้อมูลที่ไม่ใช่ช่องว่างหรือ Tab
         int valid = 0;
         
         for (int i = 0; id[i] != '\0'; i++) {
@@ -129,7 +128,6 @@ void addContent(){
         if (fgets(title, sizeof(title), stdin) == NULL) return;
         title[strcspn(title, "\n")] = '\0';
         
-        // ตรวจสอบว่ามีข้อมูลที่ไม่ใช่ช่องว่างหรือ Tab
         int valid = 0;
 
         for (int i = 0; title[i] != '\0'; i++) {
@@ -164,7 +162,6 @@ void addContent(){
         if (fgets(date, sizeof(date), stdin) == NULL) return;
         date[strcspn(date, "\n")] = '\0';
         
-        // ตรวจสอบว่ามีข้อมูลที่ไม่ใช่ช่องว่างหรือ Tab
         int valid = 0;
         for (int i = 0; date[i] != '\0'; i++) {
             if (date[i] != ' ' && date[i] != '\t') {
@@ -187,8 +184,127 @@ void addContent(){
     write_csv_field(help, title); fputc(',', help);
     fprintf(help, "%.2f", amount); fputc(',', help);
     write_csv_field(help, date); fputc('\n', help);
+
     
 
     fclose(help);
     printf("บันทึกข้อมูลเรียบร้อยลงไฟล์ %s\n", filename);
+}
+
+void searchContent(){
+    char search_term[100];
+    char line[500];
+    int search_type;
+    int found = 0;
+    
+    help = fopen(filename, "r");
+    if (help == NULL) {
+        printf("ไม่พบไฟล์ข้อมูล กรุณาเพิ่มรายการก่อน\n");
+        return;
+    }
+    
+    printf("เลือกประเภทการค้นหา:\n");
+    printf("[1] ค้นหาจากรหัสรายการ\n");
+    printf("[2] ค้นหาจากชื่อรายการ\n");
+    printf("เลือก: ");
+    
+    if (scanf("%d", &search_type) != 1) {
+        printf("กรุณากรอกตัวเลข\n");
+        fclose(help);
+        int c; while ((c = getchar()) != '\n' && c != EOF) {}
+        return;
+    }
+    int c; while ((c = getchar()) != '\n' && c != EOF) {}
+    
+    if (search_type != 1 && search_type != 2) {
+        printf("ตัวเลือกไม่ถูกต้อง\n");
+        fclose(help);
+        return;
+    }
+    
+    printf("กรอกคำค้นหา: ");
+    if (fgets(search_term, sizeof(search_term), stdin) == NULL) {
+        fclose(help);
+        return;
+    }
+    search_term[strcspn(search_term, "\n")] = '\0';
+    
+    int valid = 0;
+    for (int i = 0; search_term[i] != '\0'; i++) {
+        if (search_term[i] != ' ' && search_term[i] != '\t') {
+            valid = 1;
+            break;
+        }
+    }
+    
+    if (!valid) {
+        printf("Error: กรุณากรอกข้อมูลให้ถูกต้อง\n");
+        fclose(help);
+        return;
+    }
+    
+    if (fgets(line, sizeof(line), help) == NULL) {
+        printf("ไฟล์ว่างเปล่า\n");
+        fclose(help);
+        return;
+    }
+    
+    printf("\n--- ผลการค้นหา ---\n");
+    
+    while (fgets(line, sizeof(line), help) != NULL) {
+        char temp_line[500];
+        strcpy(temp_line, line);
+        
+        char *id = strtok(temp_line, ",");
+        char *title = strtok(NULL, ",");
+        char *amount = strtok(NULL, ",");
+        char *date = strtok(NULL, ",\n");
+        
+        if (id == NULL || title == NULL || amount == NULL || date == NULL) {
+            continue;
+        }
+        
+        if (id[0] == '"') {
+            id++;
+            if (id[strlen(id)-1] == '"') id[strlen(id)-1] = '\0';
+        }
+        if (title[0] == '"') {
+            title++;
+            if (title[strlen(title)-1] == '"') title[strlen(title)-1] = '\0';
+        }
+        
+        int match = 0;
+        
+        if (search_type == 1) {
+
+            if (strstr(id, search_term) != NULL) {
+                match = 1;
+            }
+        } else if (search_type == 2) {
+
+            if (strstr(title, search_term) != NULL) {
+                match = 1;
+            }
+        }
+        
+        if (match) {
+            printf("รหัสรายการ: %s\n", id);
+            printf("ชื่อรายการ: %s\n", title);
+            printf("จำนวนเงิน: %s บาท\n", amount);
+            printf("วันที่: %s\n", date);
+            printf("------------------------\n");
+            found++;
+        }
+    }
+    
+    if (found == 0) {
+        printf("ไม่พบข้อมูลที่ค้นหา\n");
+    } else {
+        printf("พบทั้งหมด %d รายการ\n", found);
+    }
+
+    printf("\nกด Enter เพื่อดำเนินการต่อ...");
+    getchar();
+    
+    fclose(help);
 }
