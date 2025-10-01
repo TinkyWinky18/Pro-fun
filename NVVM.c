@@ -7,7 +7,7 @@ FILE *help;
 
 void menu();
 void addContent();
-void escape_and_write(FILE *fp, const char *s);
+void write_csv_field(FILE *fp, const char *s);
 
 int main(){
     do {
@@ -66,7 +66,9 @@ void menu(){
 void write_csv_field(FILE *fp, const char *s) {
     int need_quotes = 0;
     for (const char *p = s; *p; ++p) {
-        if (*p == ',' || *p == '"' || *p == '\n' || *p == '\r') { need_quotes = 1; break; }
+        if (*p == ',' || *p == '"'){ 
+            need_quotes = 1; break; 
+        }
     }
     if (!need_quotes) {
         fputs(s, fp);
@@ -173,6 +175,12 @@ void addContent(){
         
         if (valid) break;
         printf("Error: กรุณากรอกข้อมูลให้ถูกต้อง\n");
+    }
+
+    help = fopen(filename, "a");
+    if (!help) {
+        perror("เปิดไฟล์เขียนไม่ได้");
+        return;
     }
 
     write_csv_field(help, id);    fputc(',', help);
