@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
 
 int ch; 
 FILE *help;
@@ -103,15 +102,44 @@ void addContent(){
     } else {
         fclose(help);
     }
-    printf("กรอกรหัสรายการ (เช่น B001): ");
-    if (fgets(id, sizeof(id), stdin) == NULL) return;
-    id[strcspn(id, "\n")] = '\0';
 
-    
-    printf("กรอกชื่อรายการ (เช่น ค่าสถานที่): ");
-    if (fgets(title, sizeof(title), stdin) == NULL) return;
-    title[strcspn(title, "\n")] = '\0';
-    
+     while (1) {
+        printf("กรอกรหัสรายการ (เช่น B001): ");
+        if (fgets(id, sizeof(id), stdin) == NULL) return;
+        id[strcspn(id, "\n")] = '\0';
+        
+        // ตรวจสอบว่ามีข้อมูลที่ไม่ใช่ช่องว่างหรือ Tab
+        int valid = 0;
+        
+        for (int i = 0; id[i] != '\0'; i++) {
+            if (id[i] != ' ' && id[i] != '\t') {
+                valid = 1;
+                break;
+            }
+        }
+
+        if (valid) break;
+        printf("Error: กรุณากรอกข้อมูลให้ถูกต้อง\n");
+    }
+
+   while (1) {
+        printf("กรอกชื่อรายการ (เช่น ค่าสถานที่): ");
+        if (fgets(title, sizeof(title), stdin) == NULL) return;
+        title[strcspn(title, "\n")] = '\0';
+        
+        // ตรวจสอบว่ามีข้อมูลที่ไม่ใช่ช่องว่างหรือ Tab
+        int valid = 0;
+
+        for (int i = 0; title[i] != '\0'; i++) {
+            if (title[i] != ' ' && title[i] != '\t') {
+                valid = 1;
+                break;
+            }
+        }
+
+        if (valid) break;
+        printf("Error: กรุณากรอกข้อมูลให้ถูกต้อง\n");
+    }
     
     while (1) {
         printf("กรอกจำนวนเงิน (เช่น 199.50): ");
@@ -122,21 +150,29 @@ void addContent(){
         amount = strtod(amount_text, &endp);
         
         if (endp != amount_text) {
-            while (endp && *endp && isspace((unsigned char)*endp)) endp++;
+            while (endp && *endp && (*endp == ' ' || *endp == '\t')) endp++;
         }
         
         if (endp && *endp == '\0' && amount >= 0.0) break;
         printf("รูปแบบจำนวนเงินไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง\n");
     }
     
-    printf("กรอกวันที่ (เช่น 2025-09-30): ");
-    if (fgets(date, sizeof(date), stdin) == NULL) return;
-    date[strcspn(date, "\n")] = '\0';
-
-    help = fopen(filename, "a");
-    if (!help) {
-        perror("เปิดไฟล์เขียนไม่ได้");
-        return;
+    while (1) {
+        printf("กรอกวันที่ (เช่น 2025-09-30): ");
+        if (fgets(date, sizeof(date), stdin) == NULL) return;
+        date[strcspn(date, "\n")] = '\0';
+        
+        // ตรวจสอบว่ามีข้อมูลที่ไม่ใช่ช่องว่างหรือ Tab
+        int valid = 0;
+        for (int i = 0; date[i] != '\0'; i++) {
+            if (date[i] != ' ' && date[i] != '\t') {
+                valid = 1;
+                break;
+            }
+        }
+        
+        if (valid) break;
+        printf("Error: กรุณากรอกข้อมูลให้ถูกต้อง\n");
     }
 
     write_csv_field(help, id);    fputc(',', help);
