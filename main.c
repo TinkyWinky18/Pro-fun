@@ -1,10 +1,18 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "budget.h"
 
 int ch; 
 FILE *help;
-const char *filename = "budget.csv";
+char filename[256] = "budget.csv";   // ตอนนี้แก้ไขได้จาก test
+void set_data_filename(const char *path){
+    if (path && *path) {
+        snprintf(filename, sizeof(filename), "%s", path);
+    } else {
+        snprintf(filename, sizeof(filename), "%s", "budget.csv");
+    }
+}
 
 void menu();
 void addContent();
@@ -44,6 +52,18 @@ int main(){
                 printf("-ลบรายการ-\n");
                 deleteContent();
                 break;
+            case 6:
+                printf("-ทดสอบโปรแกรม (Unit Tests)-\n");
+                run_all_tests();
+                printf("\nกด Enter เพื่อกลับเมนู...");
+                getchar();
+                break;
+            case 7:
+                printf("-ทดสอบโปรแกรม (E2E Tests)-\n");
+                run_e2e_tests();
+                printf("\nกด Enter เพื่อกลับเมนู...");
+                getchar();
+                break;
             case 0:
                 printf("-ออกจากระบบ-\n");
                 break;
@@ -66,6 +86,8 @@ void menu(){
     printf("[3]ค้นหารายการ\n");
     printf("[4]แก้ไขรายการ\n");
     printf("[5]ลบรายการ\n");
+    printf("[6]ทดสอบโปรแกรม (Unit Tests)\n");
+    printf("[7]ทดสอบโปรแกรม (E2E Tests)\n");    
     printf("[0]ออกจากระบบ\n");
     printf("---------------------------------------\n");
     printf("    โปรดเลือกตัวเลือกที่ต้องการดำเนินการ\n");
@@ -396,7 +418,6 @@ void deleteContent(){
     char search_term[100];
     char line[500];
     int search_type;
-    int found = 0;
     
     help = fopen(filename, "r");
     if (help == NULL) {
