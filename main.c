@@ -7,12 +7,12 @@ FILE *help;
 const char *filename = "budget.csv";
 
 void menu();
-void addContent();//บรรทัดที่(90-198)
+void addContent();
 void write_csv_field(FILE *fp, const char *s);
-void searchContent();//บรรทัดที่(200-317)
-void deleteContent();//บรรทัดที่(319-508)
-void editContent();//บรรทัดที่(510-832)
-void displayAllContent();//บรรทัดที่(834-897)
+void searchContent();
+void deleteContent();
+void editContent();
+void displayAllContent();
 
 int main(){
     do {
@@ -92,10 +92,98 @@ void write_csv_field(FILE *fp, const char *s) {
     }
 }
 
+char* generate_next_id() {
+    static char new_id[20];
+    char line[500];
+    char max_prefix = 'A';
+    int max_number = 0;
+    
+    FILE *check = fopen(filename, "r");
+    if (check) {
+        fgets(line, sizeof(line), check);
+        
+        while (fgets(line, sizeof(line), check)) {
+            char temp[500];
+            strcpy(temp, line);
+            char *existing_id = strtok(temp, ",");
+            
+            if (existing_id) {
+                if (existing_id[0] == '"') {
+                    existing_id++;
+                    if (existing_id[strlen(existing_id)-1] == '"') {
+                        existing_id[strlen(existing_id)-1] = '\0';
+                    }
+                }
+                
+                if (strlen(existing_id) >= 4) {
+                    char prefix = existing_id[0];
+                    int number = atoi(existing_id + 1);
+                    
+                    if (prefix > max_prefix || (prefix == max_prefix && number > max_number)) {
+                        max_prefix = prefix;
+                        max_number = number;
+                    }
+                }
+            }
+        }
+        fclose(check);
+    }
+    
+    max_number++;
+    
+    if (max_number > 999) {
+        max_prefix++;
+        max_number = 1;
+    }
+    
+    if (max_prefix > 'Z') {
+        max_prefix = 'A';
+        printf("คำเตือน: ID เกินขีดจำกัด เริ่มใหม่ที่ A001\n");
+    }
+    
+    sprintf(new_id, "%c%03d", max_prefix, max_number);
+    return new_id;
+}
+
+int validate_date(const char *date, int *year, int *month, int *day) {
+    if (strlen(date) != 10) return 0;
+    if (date[4] != '-' || date[7] != '-') return 0;
+    
+    for (int i = 0; i < 10; i++) {
+        if (i == 4 || i == 7) continue;
+        if (date[i] < '0' || date[i] > '9') return 0;
+    }
+    
+    char year_str[5], month_str[3], day_str[3];
+    strncpy(year_str, date, 4); year_str[4] = '\0';
+    strncpy(month_str, date + 5, 2); month_str[2] = '\0';
+    strncpy(day_str, date + 8, 2); day_str[2] = '\0';
+    
+    *year = atoi(year_str);
+    *month = atoi(month_str);
+    *day = atoi(day_str);
+    
+    if (*year < 2000 || *year > 2099) return 0;
+    
+    if (*month < 1 || *month > 12) return 0;
+    
+    if (*day < 1 || *day > 31) return 0;
+    
+    int days_in_month[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    
+    if ((*year % 4 == 0 && *year % 100 != 0) || (*year % 400 == 0)) {
+        days_in_month[1] = 29;
+    }
+    
+    if (*day > days_in_month[*month - 1]) return 0;
+    
+    return 1;
+}
+
 void addContent(){
     char date[20];
     char title[100];
-    char id[20];
+    char *id;
     char amount_text[50];
     double amount = -1.0;
 
@@ -113,25 +201,10 @@ void addContent(){
         fclose(help);
     }
 
-     while (1) {
-        printf("กรอกรหัสรายการ (เช่น B001): ");
-        if (fgets(id, sizeof(id), stdin) == NULL) return;
-        id[strcspn(id, "\n")] = '\0';
-        
-        int valid = 0;
-        
-        for (int i = 0; id[i] != '\0'; i++) {
-            if (id[i] != ' ' && id[i] != '\t') {
-                valid = 1;
-                break;
-            }
-        }
+    id = generate_next_id();
+    printf("รหัสรายการที่สร้างอัตโนมัติ: %s\n", id);
 
-        if (valid) break;
-        printf("Error: กรุณากรอกข้อมูลให้ถูกต้อง\n");
-    }
-
-   while (1) {
+    while (1) {
         printf("กรอกชื่อรายการ (เช่น ค่าสถานที่): ");
         if (fgets(title, sizeof(title), stdin) == NULL) return;
         title[strcspn(title, "\n")] = '\0';
@@ -165,21 +238,21 @@ void addContent(){
         printf("รูปแบบจำนวนเงินไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง\n");
     }
     
-    while (1) {
-        printf("กรอกวันที่ (เช่น 2025-09-30): ");
+   while (1) {
+        printf("กรอกวันที่ (รูปแบบ YYYY-MM-DD เช่น 2025-09-30): ");
         if (fgets(date, sizeof(date), stdin) == NULL) return;
         date[strcspn(date, "\n")] = '\0';
         
-        int valid = 0;
-        for (int i = 0; date[i] != '\0'; i++) {
-            if (date[i] != ' ' && date[i] != '\t') {
-                valid = 1;
-                break;
-            }
+        int year, month, day;
+        if (validate_date(date, &year, &month, &day)) {
+            break;
         }
         
-        if (valid) break;
-        printf("Error: กรุณากรอกข้อมูลให้ถูกต้อง\n");
+        printf("Error: รูปแบบวันที่ไม่ถูกต้อง\n");
+        printf("  - รูปแบบต้องเป็น YYYY-MM-DD\n");
+        printf("  - ปี: 2000-2099\n");
+        printf("  - เดือน: 01-12\n");
+        printf("  - วัน: 01-31 (ตามจำนวนวันในเดือนนั้นๆ)\n");
     }
 
     help = fopen(filename, "a");
@@ -192,8 +265,6 @@ void addContent(){
     write_csv_field(help, title); fputc(',', help);
     fprintf(help, "%.2f", amount); fputc(',', help);
     write_csv_field(help, date); fputc('\n', help);
-
-    
 
     fclose(help);
     printf("บันทึกข้อมูลเรียบร้อยลงไฟล์ %s\n", filename);
