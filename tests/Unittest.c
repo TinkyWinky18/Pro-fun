@@ -1,4 +1,3 @@
-// tests_all.c - Unit Tests with Detailed Output
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -9,15 +8,21 @@ static int tests_passed = 0;
 static int tests_failed = 0;
 static int tests_total = 0;
 
+#define GREEN "\033[0;32m"
+#define RED "\033[0;31m"
+#define YELLOW "\033[0;33m"
+#define BLUE "\033[0;34m"
+#define RESET "\033[0m"
+
 /* ====== Enhanced Test Macros ====== */
 #define TEST_ASSERT(cond, desc) do { \
     tests_total++; \
     if (cond) { \
         tests_passed++; \
-        printf("  [PASS] : %s\n", desc); \
+        printf(GREEN "  ✓ [PASS]" RESET " : %s\n", desc); \
     } else { \
         tests_failed++; \
-        printf("  [FAIL] : %s (line %d)\n", desc, __LINE__); \
+        printf(RED "  ✗ [FAIL]" RESET " : %s (line %d)\n", desc, __LINE__); \
     } \
 } while(0)
 
@@ -25,10 +30,10 @@ static int tests_total = 0;
     tests_total++; \
     if ((a) == (b)) { \
         tests_passed++; \
-        printf("  [PASS] : %s\n", desc); \
+        printf(GREEN "  ✓ [PASS]" RESET " : %s\n", desc); \
     } else { \
         tests_failed++; \
-        printf("  [FAIL] : %s (expected %d, got %d, line %d)\n", desc, (int)(b), (int)(a), __LINE__); \
+        printf(RED "  ✗ [FAIL]" RESET " : %s (expected %d, got %d, line %d)\n", desc, (int)(b), (int)(a), __LINE__); \
     } \
 } while(0)
 
@@ -36,10 +41,10 @@ static int tests_total = 0;
     tests_total++; \
     if ((a) && (b) && strcmp((a), (b)) == 0) { \
         tests_passed++; \
-        printf("  [PASS] : %s\n", desc); \
+        printf(GREEN "  ✓ [PASS]" RESET " : %s\n", desc); \
     } else { \
         tests_failed++; \
-        printf("  [FAIL] : %s (expected \"%s\", got \"%s\", line %d)\n", desc, (b)?(b):"(null)", (a)?(a):"(null)", __LINE__); \
+        printf(RED "  ✗ [FAIL]" RESET " : %s (expected \"%s\", got \"%s\", line %d)\n", desc, (b)?(b):"(null)", (a)?(a):"(null)", __LINE__); \
     } \
 } while(0)
 
@@ -74,20 +79,17 @@ static void restore_stdin(void) {
 /* ====== Test Functions ====== */
 
 void test_write_csv_field(void) {
-    printf("\n--- Testing write_csv_field() ---\n");
+    printf("\n" BLUE "=== Testing: write_csv_field() ===" RESET "\n");
     
     const char* tmp = "tmp_write_csv.csv";
     FILE* fp = fopen(tmp, "w+");
     
-    // Test 1: Simple text (no quotes needed)
     write_csv_field(fp, "Hello");
     fputc('\n', fp);
     
-    // Test 2: Text with comma (needs quotes)
     write_csv_field(fp, "A,B");
     fputc('\n', fp);
     
-    // Test 3: Text with quotes (needs escaping)
     write_csv_field(fp, "He said \"hi\"");
     fputc('\n', fp);
     
@@ -113,11 +115,10 @@ void test_write_csv_field(void) {
 }
 
 void test_validate_date(void) {
-    printf("\n--- Testing validate_date() ---\n");
+    printf("\n" BLUE "=== Testing: validate_date() ===" RESET "\n");
     
     int y, m, d;
     
-    // Valid dates
     TEST_ASSERT(validate_date("2025-09-30", &y, &m, &d) == 1, "valid date 2025-09-30");
     TEST_ASSERT_INT_EQ(y, 2025, "year parsed correctly");
     TEST_ASSERT_INT_EQ(m, 9, "month parsed correctly");
@@ -126,24 +127,20 @@ void test_validate_date(void) {
     TEST_ASSERT(validate_date("2000-01-01", &y, &m, &d) == 1, "minimum year 2000");
     TEST_ASSERT(validate_date("2099-12-31", &y, &m, &d) == 1, "maximum year 2099");
     
-    // Leap year
     TEST_ASSERT(validate_date("2024-02-29", &y, &m, &d) == 1, "leap year Feb 29 (2024)");
     TEST_ASSERT(validate_date("2000-02-29", &y, &m, &d) == 1, "leap year Feb 29 (2000)");
     TEST_ASSERT(validate_date("2023-02-29", &y, &m, &d) == 0, "non-leap year Feb 29 rejected");
     
-    // Invalid ranges
     TEST_ASSERT(validate_date("1999-01-01", &y, &m, &d) == 0, "year below 2000 rejected");
     TEST_ASSERT(validate_date("2100-01-01", &y, &m, &d) == 0, "year above 2099 rejected");
     TEST_ASSERT(validate_date("2025-00-15", &y, &m, &d) == 0, "month 00 rejected");
     TEST_ASSERT(validate_date("2025-13-15", &y, &m, &d) == 0, "month 13 rejected");
     
-    // Days in month
     TEST_ASSERT(validate_date("2025-01-31", &y, &m, &d) == 1, "31 days in January");
     TEST_ASSERT(validate_date("2025-04-30", &y, &m, &d) == 1, "30 days in April");
     TEST_ASSERT(validate_date("2025-04-31", &y, &m, &d) == 0, "April has no 31st day");
     TEST_ASSERT(validate_date("2025-02-30", &y, &m, &d) == 0, "February has no 30th day");
     
-    // Format errors
     TEST_ASSERT(validate_date("25-09-30", &y, &m, &d) == 0, "wrong format (YY-MM-DD)");
     TEST_ASSERT(validate_date("2025/09/30", &y, &m, &d) == 0, "wrong separator (/)");
     TEST_ASSERT(validate_date("2025-9-30", &y, &m, &d) == 0, "month not zero-padded");
@@ -151,12 +148,11 @@ void test_validate_date(void) {
 }
 
 void test_generate_next_id(void) {
-    printf("\n--- Testing generate_next_id() ---\n");
+    printf("\n" BLUE "=== Testing: generate_next_id() ===" RESET "\n");
     
     const char* tmp = "tmp_ids.csv";
     set_data_filename(tmp);
     
-    // Empty file - should generate A001
     FILE* f = fopen(tmp, "w");
     fprintf(f, "RequestID,Title,Amount,Date\n");
     fclose(f);
@@ -164,7 +160,6 @@ void test_generate_next_id(void) {
     char* id1 = generate_next_id();
     TEST_ASSERT_STR_EQ(id1, "A001", "first ID is A001");
     
-    // Add A001, next should be A002
     f = fopen(tmp, "a");
     fprintf(f, "A001,Test,10.00,2025-09-30\n");
     fclose(f);
@@ -172,7 +167,6 @@ void test_generate_next_id(void) {
     char* id2 = generate_next_id();
     TEST_ASSERT_STR_EQ(id2, "A002", "second ID is A002");
     
-    // Add A999, next should be B001
     f = fopen(tmp, "w");
     fprintf(f, "RequestID,Title,Amount,Date\n");
     fprintf(f, "A999,Test,10.00,2025-09-30\n");
@@ -181,7 +175,6 @@ void test_generate_next_id(void) {
     char* id3 = generate_next_id();
     TEST_ASSERT_STR_EQ(id3, "B001", "rollover from A999 to B001");
     
-    // Multiple prefixes - should pick highest
     f = fopen(tmp, "w");
     fprintf(f, "RequestID,Title,Amount,Date\n");
     fprintf(f, "A500,Test1,10.00,2025-09-30\n");
@@ -197,7 +190,7 @@ void test_generate_next_id(void) {
 }
 
 void test_addContent(void) {
-    printf("\n--- Testing addContent() ---\n");
+    printf("\n" BLUE "=== Testing: addContent() ===" RESET "\n");
     
     const char* tmp = "tmp_add.csv";
     set_data_filename(tmp);
@@ -210,16 +203,18 @@ void test_addContent(void) {
         "tmp_stdin_add.txt"
     );
     
+    printf("  (Running addContent...)\n");
     addContent();
+    printf("\n");
     
     FILE* f = fopen(tmp, "r");
     TEST_ASSERT(f != NULL, "file created successfully");
     
     char line[512];
-    fgets(line, sizeof(line), f); // header
+    fgets(line, sizeof(line), f);
     TEST_ASSERT(strstr(line, "RequestID") != NULL, "header contains RequestID");
     
-    fgets(line, sizeof(line), f); // data
+    fgets(line, sizeof(line), f);
     TEST_ASSERT(strstr(line, "ค่าเช่าสถานที่") != NULL, "title saved correctly");
     TEST_ASSERT(strstr(line, "199.50") != NULL, "amount saved correctly");
     TEST_ASSERT(strstr(line, "2025-09-30") != NULL, "date saved correctly");
@@ -232,13 +227,12 @@ void test_addContent(void) {
 }
 
 void test_searchContent(void) {
-    printf("\n--- Testing searchContent() ---\n");
+    printf("\n" BLUE "=== Testing: searchContent() ===" RESET "\n");
     
     const char* tmp = "tmp_search.csv";
     set_data_filename(tmp);
     write_base_csv(tmp);
     
-    // Search by title
     set_stdin_from_string(
         "2\n"
         "ค่าเช่า\n"
@@ -246,11 +240,11 @@ void test_searchContent(void) {
         "tmp_stdin_search.txt"
     );
     
-    printf("  (Running search - check console output)\n");
+    printf("  (Running searchContent by title...)\n");
     searchContent();
+    printf("\n");
     TEST_ASSERT(1, "search by title executed");
     
-    // Search by ID
     write_base_csv(tmp);
     set_stdin_from_string(
         "1\n"
@@ -259,7 +253,9 @@ void test_searchContent(void) {
         "tmp_stdin_search2.txt"
     );
     
+    printf("  (Running searchContent by ID...)\n");
     searchContent();
+    printf("\n");
     TEST_ASSERT(1, "search by ID executed");
     
     remove(tmp);
@@ -269,28 +265,30 @@ void test_searchContent(void) {
 }
 
 void test_deleteContent(void) {
-    printf("\n--- Testing deleteContent() ---\n");
+    printf("\n" BLUE "=== Testing: deleteContent() ===" RESET "\n");
     
     const char* tmp = "tmp_delete.csv";
     set_data_filename(tmp);
     write_base_csv(tmp);
     
     set_stdin_from_string(
-        "2\n"           // search by title
-        "ค่าเช่า\n"     // find A002
-        "1\n"           // select first result
-        "y\n"           // confirm delete
+        "2\n"
+        "ค่าเช่า\n"
+        "1\n"
+        "y\n"
         "\n",
         "tmp_stdin_delete.txt"
     );
     
+    printf("  (Running deleteContent...)\n");
     deleteContent();
+    printf("\n");
     
     FILE* f = fopen(tmp, "r");
     TEST_ASSERT(f != NULL, "file still exists after delete");
     
     char line[512];
-    fgets(line, sizeof(line), f); // header
+    fgets(line, sizeof(line), f);
     
     int data_lines = 0;
     int found_a001 = 0, found_a002 = 0;
@@ -312,7 +310,7 @@ void test_deleteContent(void) {
 }
 
 void test_editContent(void) {
-    printf("\n--- Testing editContent() ---\n");
+    printf("\n" BLUE "=== Testing: editContent() ===" RESET "\n");
     
     const char* tmp = "tmp_edit.csv";
     set_data_filename(tmp);
@@ -323,27 +321,29 @@ void test_editContent(void) {
     fclose(f);
     
     set_stdin_from_string(
-        "1\n"                   // search by ID
-        "A001\n"                // find A001
-        "1\n"                   // select first result
-        "5\n"                   // edit all fields
-        "A010\n"                // new ID
-        "ค่าเครื่องเขียน\n"    // new title
-        "75.25\n"               // new amount
-        "2025-10-01\n"          // new date
-        "y\n"                   // confirm
+        "1\n"
+        "A001\n"
+        "1\n"
+        "5\n"
+        "A010\n"
+        "ค่าเครื่องเขียน\n"
+        "75.25\n"
+        "2025-10-01\n"
+        "y\n"
         "\n",
         "tmp_stdin_edit.txt"
     );
     
+    printf("  (Running editContent...)\n");
     editContent();
+    printf("\n");
     
     f = fopen(tmp, "r");
     TEST_ASSERT(f != NULL, "file exists after edit");
     
     char line[512];
-    fgets(line, sizeof(line), f); // header
-    fgets(line, sizeof(line), f); // data
+    fgets(line, sizeof(line), f);
+    fgets(line, sizeof(line), f);
     
     TEST_ASSERT(strstr(line, "A010") != NULL, "ID changed to A010");
     TEST_ASSERT(strstr(line, "ค่าเครื่องเขียน") != NULL, "title updated");
@@ -357,7 +357,7 @@ void test_editContent(void) {
 }
 
 void test_displayAllContent(void) {
-    printf("\n--- Testing displayAllContent() ---\n");
+    printf("\n" BLUE "=== Testing: displayAllContent() ===" RESET "\n");
     
     const char* tmp = "tmp_display.csv";
     set_data_filename(tmp);
@@ -365,8 +365,9 @@ void test_displayAllContent(void) {
     
     set_stdin_from_string("\n", "tmp_stdin_display.txt");
     
-    printf("  (Running display - check console output)\n");
+    printf("  (Running displayAllContent...)\n");
     displayAllContent();
+    printf("\n"); 
     TEST_ASSERT(1, "display all executed successfully");
     
     remove(tmp);
@@ -395,14 +396,19 @@ void run_all_tests(void) {
     printf("\n========================================\n");
     printf("  TEST SUMMARY\n");
     printf("========================================\n");
-    printf("Passed: %d\n", tests_passed);
-    printf("Failed: %d\n", tests_failed);
+    printf(GREEN "Passed: %d" RESET "\n", tests_passed);
+    if (tests_failed > 0) {
+        printf(RED "Failed: %d" RESET "\n", tests_failed);
+    } else {
+        printf("Failed: %d\n", tests_failed);
+    }
     printf("Total:  %d\n", tests_total);
     printf("========================================\n\n");
     
     if (tests_failed == 0) {
-        printf("🎉 All tests passed! 🎉\n\n");
+        printf(GREEN "🎉 All tests passed! 🎉\n" RESET);
     } else {
-        printf("⚠️  Some tests failed. Please review above. ⚠️\n\n");
+        printf(RED "⚠️  Some tests failed. Please review above. ⚠️\n" RESET);
     }
+    printf("\n");
 }

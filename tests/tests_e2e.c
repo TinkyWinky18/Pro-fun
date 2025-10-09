@@ -100,6 +100,8 @@ void e2e_test_add_complete_flow() {
     addContent();
     restore_stdin();
     
+    printf("\n"); // เพิ่ม newline หลังจากฟังก์ชันเสร็จ
+    
     // Verify file exists
     E2E_ASSERT(access(test_file, F_OK) == 0, "CSV file created");
     
@@ -132,6 +134,7 @@ void e2e_test_add_multiple_records() {
     redirect_stdin("e2e_input1.txt");
     addContent();
     restore_stdin();
+    printf("\n");
     
     // Add second record
     create_input_file("e2e_input2.txt", 
@@ -139,6 +142,7 @@ void e2e_test_add_multiple_records() {
     redirect_stdin("e2e_input2.txt");
     addContent();
     restore_stdin();
+    printf("\n");
     
     // Add third record
     create_input_file("e2e_input3.txt", 
@@ -146,6 +150,7 @@ void e2e_test_add_multiple_records() {
     redirect_stdin("e2e_input3.txt");
     addContent();
     restore_stdin();
+    printf("\n");
     
     // Verify
     E2E_ASSERT(count_csv_lines(test_file) == 3, "3 records added");
@@ -189,6 +194,7 @@ void e2e_test_search_flow() {
     printf("  (Running search...)\n");
     searchContent();
     restore_stdin();
+    printf("\n");
     
     E2E_PASS("Search by title executed");
     
@@ -203,6 +209,7 @@ void e2e_test_search_flow() {
     printf("  (Running search by ID...)\n");
     searchContent();
     restore_stdin();
+    printf("\n");
     
     E2E_PASS("Search by ID executed");
     
@@ -242,6 +249,7 @@ void e2e_test_edit_flow() {
     redirect_stdin("e2e_edit_input.txt");
     editContent();
     restore_stdin();
+    printf("\n");
     
     // Verify changes
     E2E_ASSERT(file_contains(test_file, "250.75"), "Amount updated to 250.75");
@@ -286,6 +294,7 @@ void e2e_test_delete_flow() {
     redirect_stdin("e2e_delete_input.txt");
     deleteContent();
     restore_stdin();
+    printf("\n");
     
     // Verify
     int after_count = count_csv_lines(test_file);
@@ -316,6 +325,7 @@ void e2e_test_full_crud_cycle() {
     redirect_stdin("e2e_crud_add.txt");
     addContent();
     restore_stdin();
+    printf("\n");
     E2E_ASSERT(file_contains(test_file, "ค่าทดสอบ"), "CREATE: Record added");
     
     // READ: Display all
@@ -324,6 +334,7 @@ void e2e_test_full_crud_cycle() {
     printf("  (Displaying all...)\n");
     displayAllContent();
     restore_stdin();
+    printf("\n");
     E2E_PASS("READ: Display executed");
     
     // UPDATE: Edit amount
@@ -332,6 +343,7 @@ void e2e_test_full_crud_cycle() {
     redirect_stdin("e2e_crud_update.txt");
     editContent();
     restore_stdin();
+    printf("\n");
     E2E_ASSERT(file_contains(test_file, "200.00"), "UPDATE: Amount changed");
     
     // DELETE: Remove record
@@ -340,6 +352,7 @@ void e2e_test_full_crud_cycle() {
     redirect_stdin("e2e_crud_delete.txt");
     deleteContent();
     restore_stdin();
+    printf("\n");
     E2E_ASSERT(count_csv_lines(test_file) == 0, "DELETE: Record removed");
     
     // Cleanup
@@ -374,6 +387,7 @@ void e2e_test_validation_flow() {
     printf("  (Testing invalid amount...)\n");
     addContent();
     restore_stdin();
+    printf("\n");
     E2E_ASSERT(file_contains(test_file, "100.00"), "Valid amount accepted after retry");
     
     // Test: Invalid date (should retry)
@@ -390,6 +404,7 @@ void e2e_test_validation_flow() {
     printf("  (Testing invalid date...)\n");
     addContent();
     restore_stdin();
+    printf("\n");
     E2E_ASSERT(file_contains(test_file, "2025-10-01"), "Valid date accepted after retry");
     
     // Cleanup
@@ -418,6 +433,7 @@ void e2e_test_id_sequencing() {
         redirect_stdin(input_file);
         addContent();
         restore_stdin();
+        printf("\n");
         
         remove(input_file);
     }
@@ -435,12 +451,14 @@ void e2e_test_id_sequencing() {
     redirect_stdin("e2e_id_delete.txt");
     deleteContent();
     restore_stdin();
+    printf("\n");
     
     // Add new record (should be A006, not A003)
     create_input_file("e2e_id_new.txt", "New\n10.00\n2025-10-01\n\n");
     redirect_stdin("e2e_id_new.txt");
     addContent();
     restore_stdin();
+    printf("\n");
     
     E2E_ASSERT(file_contains(test_file, "A006"), "New ID is A006 (not reusing A003)");
     E2E_ASSERT(!file_contains(test_file, "A003"), "A003 not reused");
@@ -468,6 +486,7 @@ void e2e_test_special_characters() {
     redirect_stdin("e2e_special_comma.txt");
     addContent();
     restore_stdin();
+    printf("\n");
     
     E2E_ASSERT(file_contains(test_file, "ค่า,อาหาร,และ,เครื่องดื่ม"), 
                "Comma in title handled");
@@ -510,6 +529,7 @@ void e2e_test_cancel_operations() {
     redirect_stdin("e2e_cancel_delete.txt");
     deleteContent();
     restore_stdin();
+    printf("\n");
     
     E2E_ASSERT(count_csv_lines(test_file) == initial_count, 
                "Delete cancelled - count unchanged");
@@ -521,6 +541,7 @@ void e2e_test_cancel_operations() {
     redirect_stdin("e2e_cancel_edit.txt");
     editContent();
     restore_stdin();
+    printf("\n");
     
     E2E_ASSERT(file_contains(test_file, "100.00"), "Edit cancelled - data unchanged");
     
@@ -557,19 +578,15 @@ void run_e2e_tests() {
     printf("\n========================================\n");
     printf("  E2E TEST SUMMARY\n");
     printf("========================================\n");
-    printf(GREEN "Passed: %d" RESET "\n", e2e_passed);
-    if (e2e_failed > 0) {
-        printf(RED "Failed: %d" RESET "\n", e2e_failed);
-    } else {
-        printf("Failed: %d\n", e2e_failed);
-    }
+    printf("Passed: %d\n", e2e_passed);
+    printf("Failed: %d\n", e2e_failed);
     printf("Total:  %d\n", e2e_passed + e2e_failed);
     printf("========================================\n\n");
     
     if (e2e_failed == 0) {
-        printf(GREEN "🎉 All E2E tests passed! 🎉\n" RESET);
+        printf("🎉 All E2E tests passed! 🎉\n");
     } else {
-        printf(RED "⚠️  Some E2E tests failed!\n" RESET);
+        printf("⚠️  Some E2E tests failed!\n");
     }
     printf("\n");
 }
